@@ -274,6 +274,10 @@ app.get("/users/:id/savedposts", async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (id === undefined) {
+      return res.status(404).json({ error: "No User ID Provided" });
+    }
+
     const user = await User.findById(id);
 
     if (!user) {
