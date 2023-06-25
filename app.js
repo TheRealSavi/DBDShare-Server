@@ -4,20 +4,24 @@ import dotenv from "dotenv";
 import cors from "cors";
 import session from "express-session";
 import passport from "passport";
-import User from "./User.js";
-import Post from "./PostModel.js";
+import User from "./Models/UserModel.js";
+import Post from ".Models/PostModel.js";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as SteamStrategy } from "passport-steam";
 
+//import env variables
 dotenv.config();
 
+//connect to mongodb
 mongoose.connect(process.env.MONGODB_CONNECTION, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
+//init express
 const app = express();
 
+//setup express middlewares
 app.use(express.json());
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
@@ -32,10 +36,12 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+//serialization of sessions signed in user. user is stored as their id
 passport.serializeUser((user, done) => {
   return done(null, user._id);
 });
 
+//deserialization of sessions signed in user. for retrieval of user details. finds database record from the serialized data. (id)
 passport.deserializeUser((id, done) => {
   const findUserById = async () => {
     try {
@@ -53,6 +59,7 @@ passport.deserializeUser((id, done) => {
   findUserById();
 });
 
+//setup of the google sign in strategy to be used by passport
 passport.use(
   new GoogleStrategy(
     {
@@ -85,6 +92,7 @@ passport.use(
   )
 );
 
+//setup of the steam sign in strategy to be used by passport
 passport.use(
   new SteamStrategy(
     {
@@ -113,11 +121,11 @@ passport.use(
       }
       //all availible profile info returned by steam
       //console.log(profile);
-      handleAccount();
     }
   )
 );
 
+//authorization api routes
 app.get(
   "/auth/google",
   passport.authenticate("google", { scope: ["profile"] })
@@ -155,6 +163,7 @@ app.get("/auth/logout", (req, res, next) => {
   }
 });
 
+//application api routes
 app.get("/", (req, res) => {
   res.send("Hello world :)");
 });
@@ -209,6 +218,7 @@ app.post("/unsavepost", async (req, res) => {
   }
 });
 
+//when sending a post to the client, after retrieving it from the database, this function is called to add an isSaved prop to the post to match the type definition of the client
 const addIsSavedProp = (savedIds, posts) => {
   for (let i = 0; i < posts.length; i++) {
     if (savedIds.includes(posts[i]._id)) {
@@ -347,6 +357,7 @@ app.get("/users/:id", async (req, res) => {
   }
 });
 
+//start the express server
 app.listen(5000, () => {
   console.log("Server started");
 });
