@@ -165,9 +165,17 @@ app.get("/getuser", (req, res) => {
 
 app.post("/savepost", async (req, res) => {
   try {
+    const post = await Post.findById(req.body.postId);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
     if (!req.user.savedPosts.includes(req.body.postId)) {
       req.user.savedPosts.push(req.body.postId);
+      post.saves += 1;
+      await post.save();
       await req.user.save();
+
       res.status(201).json({ message: "saved" });
     } else {
       res.status(201).json({ message: "already was saved" });
@@ -180,9 +188,16 @@ app.post("/savepost", async (req, res) => {
 
 app.post("/unsavepost", async (req, res) => {
   try {
+    const post = await Post.findById(req.body.postId);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
     const indexofpost = req.user.savedPosts.indexOf(req.body.postId);
     if (indexofpost !== -1) {
       req.user.savedPosts.splice(indexofpost, 1);
+      post.saves -= 1;
+      await post.save();
       await req.user.save();
       res.status(201).json({ message: "unsaved" });
     } else {
@@ -274,7 +289,7 @@ app.get("/users/:id/savedposts", async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (id === undefined) {
+    if (id == undefined) {
       return res.status(404).json({ error: "No User ID Provided" });
     }
 
