@@ -13,7 +13,7 @@ const PostSchema = mongoose.Schema({
     required: [true, "No saves"],
     default: 0,
   },
-  perks: {
+  perkIDs: {
     type: [String],
     required: true,
   },

@@ -4,10 +4,16 @@ import dotenv from "dotenv";
 import cors from "cors";
 import session from "express-session";
 import passport from "passport";
+import path from "path";
 import User from "./Models/UserModel.js";
-import Post from ".Models/PostModel.js";
+import Perk from "./Models/PerkModel.js";
+import Post from "./Models/PostModel.js";
+import { createRequire } from "module";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as SteamStrategy } from "passport-steam";
+
+const require = createRequire(import.meta.url);
+const __dirname = path.dirname(require.resolve("./"));
 
 //import env variables
 dotenv.config();
@@ -355,6 +361,75 @@ app.get("/users/:id", async (req, res) => {
     console.log(err);
     res.status(500).json({ message: err });
   }
+});
+
+app.get("/perks", async (req, res) => {
+  try {
+    const perks = await Perk.find({});
+    res.status(200).json(perks);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/perks", async (req, res) => {
+  try {
+    const perks = await Perk.find({});
+    res.status(200).json(perks);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/perks/survivor", async (req, res) => {
+  try {
+    const perks = await Perk.find({ role: "survivor" });
+    res.status(200).json(perks);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/perks/killer", async (req, res) => {
+  try {
+    const perks = await Perk.find({ role: "killer" });
+    res.status(200).json(perks);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/perk/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const perk = await Perk.findById(id);
+    res.status(200).json(perk);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/perkimg/:perkimg*", (req, res) => {
+  const perkImg = req.params.perkimg + req.params[0];
+  const imagePath = path.join("assets", "perks", perkImg);
+  console.log("getting img", perkImg);
+
+  res.sendFile(imagePath, { root: __dirname }, (err) => {
+    if (err) {
+      if (err.code === "ENOENT") {
+        // File not found error
+        res.status(404).json({ message: "Image not found" });
+      } else {
+        // Other error occurred
+        res.status(500).json({ message: err });
+      }
+    }
+  });
 });
 
 //start the express server
