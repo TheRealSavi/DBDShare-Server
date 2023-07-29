@@ -93,7 +93,7 @@ passport.use(
         return cb(err, null);
       }
       //all availible profile info returned by google
-      //console.log(profile);
+      console.log(profile);
     }
   )
 );
@@ -102,8 +102,8 @@ passport.use(
 passport.use(
   new SteamStrategy(
     {
-      returnURL: "http://localhost:5000/auth/steam/callback",
-      realm: "http://localhost:5000/",
+      returnURL: "http://192.168.1.128:5000/auth/steam/callback",
+      realm: "http://192.168.1.128:5000/",
       apiKey: process.env.STEAM_API_KEY,
     },
     async (identifier, profile, done) => {
@@ -114,19 +114,26 @@ passport.use(
           const newUser = new User({
             steamId: profile._json.steamid,
             username: profile._json.personaname,
+            profilePic: profile._json.avatarfull,
           });
           await newUser.save();
+          console.log(profile);
           return done(null, newUser);
         } else {
           //user found in database
+          console.log(profile);
+          if (profile._json.avatarfull != user.profilePic) {
+            user.profilePic = profile._json.avatarfull;
+            await user.save();
+            console.log(user.username + "'s pfp updated");
+          }
+
           return done(null, user);
         }
       } catch (err) {
         console.log(err);
         return done(err, null);
       }
-      //all availible profile info returned by steam
-      //console.log(profile);
     }
   )
 );
@@ -280,6 +287,41 @@ app.post("/newpost", async (req, res) => {
       res
         .status(401)
         .json({ message: "May not create post while not signed in" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.post("/follow", async (req, res) => {
+  try {
+    const author = await User.findById(req.body.authorID);
+    if (!author) {
+      return res.status(404).json({ error: "Author not found" });
+    }
+    if (!req.user.following.includes(req.body.authorID)) {
+      req.user.following.push(req.body.authorID);
+      author.followers += 1;
+      await req.user.save();
+      await author.save();
+
+      res.status(201).json({ message: "followed" });
+    } else {
+      res.status(201).json({ message: "already was followed" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/following", async (req, res) => {
+  try {
+    if (req.user) {
+      res.status(200).json(req.user.following);
+    } else {
+      res.status(401).json({ message: "Not signed in" });
     }
   } catch (err) {
     console.log(err);
