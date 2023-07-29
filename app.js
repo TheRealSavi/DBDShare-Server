@@ -102,8 +102,8 @@ passport.use(
 passport.use(
   new SteamStrategy(
     {
-      returnURL: "http://192.168.1.128:5000/auth/steam/callback",
-      realm: "http://192.168.1.128:5000/",
+      returnURL: process.env.SERVER_URL + "auth/steam/callback",
+      realm: process.env.SERVER_URL,
       apiKey: process.env.STEAM_API_KEY,
     },
     async (identifier, profile, done) => {
