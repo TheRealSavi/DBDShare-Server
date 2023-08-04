@@ -316,6 +316,34 @@ app.post("/follow", async (req, res) => {
   }
 });
 
+app.post("/unfollow", async (req, res) => {
+  try {
+    const author = await User.findById(req.body.authorID);
+    if (!author) {
+      return res.status(404).json({ error: "Author not found" });
+    }
+    if (req.user.following.includes(req.body.authorID)) {
+      const indexToRemove = req.user.following.indexOf(req.body.authorID);
+      if (indexToRemove !== -1) { 
+        req.user.following.splice(indexToRemove, 1);
+        author.followers -= 1;
+        await req.user.save();
+        await author.save();
+  
+        res.status(201).json({ message: "unfollowed" });
+      } else {
+        res.status(201).json({ message: "user was never followed e1" });
+      }
+      
+    } else {
+      res.status(201).json({ message: "user was never followed e2" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
 app.get("/following", async (req, res) => {
   try {
     if (req.user) {
