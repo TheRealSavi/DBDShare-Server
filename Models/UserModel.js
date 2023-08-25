@@ -26,9 +26,19 @@ const UserSchema = mongoose.Schema({
   },
   followers: {
     type: Number,
-    required: [true, "No saves"],
+    required: [true, 0],
     default: 0,
   },
+  saveCount: {
+    type: Number,
+    required: [true, 0],
+    default: 0
+  },
+  postCount: {
+    type: Number,
+    required: [true, 0],
+    default: 0
+  }
 });
 
 const User = mongoose.model("User", UserSchema);

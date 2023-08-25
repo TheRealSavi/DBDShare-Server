@@ -194,6 +194,13 @@ app.post("/savepost", async (req, res) => {
 
     if (!req.user.savedPosts.includes(req.body.postId)) {
       req.user.savedPosts.push(req.body.postId);
+
+      const postAuthor = await User.findById(post.authorID)
+      if (postAuthor) {
+        postAuthor.saveCount += 1
+        await postAuthor.save()
+      }
+
       post.saves += 1;
       await post.save();
       await req.user.save();
@@ -221,6 +228,13 @@ app.post("/unsavepost", async (req, res) => {
       post.saves -= 1;
       await post.save();
       await req.user.save();
+
+      const postAuthor = await User.findById(post.authorID)
+      if (postAuthor) {
+        postAuthor.saveCount -= 1
+        await postAuthor.save()
+      }
+
       res.status(201).json({ message: "unsaved" });
     } else {
       res.status(201).json({ message: "not a saved post" });
@@ -282,6 +296,10 @@ app.post("/newpost", async (req, res) => {
   try {
     if (req.user) {
       const newPost = await Post.create(req.body);
+
+        req.user.postCount += 1
+        await req.user.save()
+    
       res.status(200).json(newPost);
     } else {
       res
