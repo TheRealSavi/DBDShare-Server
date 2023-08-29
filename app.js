@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import session from "express-session";
 import passport from "passport";
+import fs from "fs";
 import path from "path";
 import User from "./Models/UserModel.js";
 import Perk from "./Models/PerkModel.js";
@@ -195,10 +196,10 @@ app.post("/savepost", async (req, res) => {
     if (!req.user.savedPosts.includes(req.body.postId)) {
       req.user.savedPosts.push(req.body.postId);
 
-      const postAuthor = await User.findById(post.authorID)
+      const postAuthor = await User.findById(post.authorID);
       if (postAuthor) {
-        postAuthor.saveCount += 1
-        await postAuthor.save()
+        postAuthor.saveCount += 1;
+        await postAuthor.save();
       }
 
       post.saves += 1;
@@ -229,10 +230,10 @@ app.post("/unsavepost", async (req, res) => {
       await post.save();
       await req.user.save();
 
-      const postAuthor = await User.findById(post.authorID)
+      const postAuthor = await User.findById(post.authorID);
       if (postAuthor) {
-        postAuthor.saveCount -= 1
-        await postAuthor.save()
+        postAuthor.saveCount -= 1;
+        await postAuthor.save();
       }
 
       res.status(201).json({ message: "unsaved" });
@@ -297,9 +298,9 @@ app.post("/newpost", async (req, res) => {
     if (req.user) {
       const newPost = await Post.create(req.body);
 
-        req.user.postCount += 1
-        await req.user.save()
-    
+      req.user.postCount += 1;
+      await req.user.save();
+
       res.status(200).json(newPost);
     } else {
       res
@@ -342,17 +343,16 @@ app.post("/unfollow", async (req, res) => {
     }
     if (req.user.following.includes(req.body.authorID)) {
       const indexToRemove = req.user.following.indexOf(req.body.authorID);
-      if (indexToRemove !== -1) { 
+      if (indexToRemove !== -1) {
         req.user.following.splice(indexToRemove, 1);
         author.followers -= 1;
         await req.user.save();
         await author.save();
-  
+
         res.status(201).json({ message: "unfollowed" });
       } else {
         res.status(201).json({ message: "user was never followed e1" });
       }
-      
     } else {
       res.status(201).json({ message: "user was never followed e2" });
     }
@@ -451,10 +451,108 @@ app.get("/users/:id", async (req, res) => {
   }
 });
 
-app.get("/perks", async (req, res) => {
+app.get("/perkFileDirs", async (req, res) => {
   try {
-    const perks = await Perk.find({});
+    const readFileNamesRecurse = (directoryPath) => {
+      const fileNames = [];
+
+      const traverseDirectory = (currentPath) => {
+        const files = fs.readdirSync(currentPath);
+
+        files.forEach((file) => {
+          const filePath = path.join(currentPath, file);
+          const stat = fs.statSync(filePath);
+
+          if (stat.isFile()) {
+            fileNames.push({
+              name: file
+                .replace("IconPerks_", "")
+                .replace(".png", "")
+                .replace("iconPerks_", ""),
+              path: filePath.replace(/\\/g, "/").replace("assets/Perks/", ""),
+            });
+          } else if (stat.isDirectory()) {
+            traverseDirectory(filePath);
+          }
+        });
+      };
+
+      traverseDirectory(directoryPath);
+      return fileNames;
+    };
+
+    const files = readFileNamesRecurse("./assets/Perks");
+    res.status(200).json(files);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/perkDefs", async (req, res) => {
+  try {
+    const parseInputFile = (filePath) => {
+      const fileContent = fs.readFileSync(filePath, "utf-8");
+      const lines = fileContent
+        .split("\n")
+        .filter((line) => line.trim() !== "");
+
+      const perks = [];
+      let currentPerk = null;
+      let writingDesc = false;
+
+      for (const line of lines) {
+        if (line.includes("*>")) {
+          if (currentPerk != null) {
+            currentPerk = null;
+          }
+          currentPerk = {
+            name: line.replace("*>", "").replace("\r", ""),
+            desc: "",
+          };
+          writingDesc = true;
+        } else if (currentPerk) {
+          if (writingDesc) {
+            if (line.includes("*<")) {
+              writingDesc = false;
+              currentPerk.desc += line.replace("*<", "").replace("\r", "");
+            } else {
+              currentPerk.desc += line;
+            }
+          } else {
+            if (!currentPerk.owner) {
+              currentPerk.owner = line.replace("\r", "");
+            } else if (!currentPerk.role) {
+              currentPerk.role = line.replace("\r", "");
+              perks.push(currentPerk);
+            }
+          }
+        }
+      }
+
+      return perks;
+    };
+    const perks = parseInputFile("./assets/PerkDefs.txt");
     res.status(200).json(perks);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.post("/updatePerks", async (req, res) => {
+  try {
+    req.body.forEach(async (perk) => {
+      console.log(perk);
+      const dbPerk = await Perk.find({ name: perk.name })[0];
+      if (dbPerk) {
+        dbPerk.set(perk);
+        await dbPerk.save();
+      } else {
+        const newPerk = await Perk.create(perk);
+      }
+    });
+    res.status(201).json({ message: "saved" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: err });
@@ -473,7 +571,7 @@ app.get("/perks", async (req, res) => {
 
 app.get("/perks/survivor", async (req, res) => {
   try {
-    const perks = await Perk.find({ role: "survivor" });
+    const perks = await Perk.find({ role: "Survivor" });
     res.status(200).json(perks);
   } catch (err) {
     console.log(err);
@@ -483,7 +581,18 @@ app.get("/perks/survivor", async (req, res) => {
 
 app.get("/perks/killer", async (req, res) => {
   try {
-    const perks = await Perk.find({ role: "killer" });
+    const perks = await Perk.find({ role: "Killer" });
+    res.status(200).json(perks);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/perkbyname/:name", async (req, res) => {
+  try {
+    const { name } = req.params;
+    const perks = await Perk.find({ name: name });
     res.status(200).json(perks);
   } catch (err) {
     console.log(err);
