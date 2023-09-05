@@ -1,27 +1,24 @@
-
-# DBD Share 
+# DBD Share
 
 DBD Share is a web application for people to share and save their favorite builds for the game "Dead by Daylight"
 
 Essentially this is a full-stack CRUD application that I intended to host a production version soon.
 
-
-
-## ⚙ Tech Stack 
+## ⚙ Tech Stack
 
 **Client:** React, TailwindCSS, TypeScript, Vite
 
 **Server:** Node, Express, Mongoose, Passport
 
-
-## ✨ Features 
+## ✨ Features
 
 - Sign in through Steam
 - Sign in through Google
 - Responsive design for desktop and mobile
 - Users and posts stored in database
 - RESTful API
-## 🗺 Roadmap 
+
+## 🗺 Roadmap
 
 - Light/Dark mode toggle
 
@@ -29,15 +26,11 @@ Essentially this is a full-stack CRUD application that I intended to host a prod
 
 - Implement frontend and backend cache
 
-- Implement API request for perk images to reduce load times
-
-## ✏ Authors 
+## ✏ Authors
 
 - [@John Gibbons](https://www.github.com/TheRealSavi)
 
-
-
-## 📷 Screenshots 
+## 📷 Screenshots
 
 ![App Screenshot](https://i.imgur.com/yTjSiDR.png)
 
@@ -46,7 +39,6 @@ Essentially this is a full-stack CRUD application that I intended to host a prod
 ![App Screenshot](https://i.imgur.com/ffCheCw.png)
 
 ![App Screenshot](https://i.imgur.com/xTYNmJi.png)
-
 
 ## 💾 Run Locally
 
@@ -65,6 +57,7 @@ Go to the project directories
 ```bash
   cd DBDShare-Client
 ```
+
 ```bash
   cd DBDShare-Server
 ```
@@ -80,12 +73,12 @@ Start the client
 ```bash
   npm run dev
 ```
+
 Start the server
 
 ```bash
   npm run start
 ```
-
 
 ## 🔑 Environment Variables
 
@@ -93,7 +86,7 @@ To run this project, you will need to add the following environment variables to
 
 Client:
 
-`REACT_APP_API_URL`
+`VITE_API_URL`
 
 Server:
 
@@ -114,4 +107,3 @@ Server:
 ## ⚖ License
 
 [MIT](https://choosealicense.com/licenses/mit/)
-
