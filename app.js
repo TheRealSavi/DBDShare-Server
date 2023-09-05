@@ -453,36 +453,42 @@ app.get("/users/:id", async (req, res) => {
 
 app.get("/perkFileDirs", async (req, res) => {
   try {
-    const readFileNamesRecurse = (directoryPath) => {
-      const fileNames = [];
+    if (req.user) {
+      if (req.user._id == "64eda40519efcaf5ecaa2cb9") {
+        const readFileNamesRecurse = (directoryPath) => {
+          const fileNames = [];
 
-      const traverseDirectory = (currentPath) => {
-        const files = fs.readdirSync(currentPath);
+          const traverseDirectory = (currentPath) => {
+            const files = fs.readdirSync(currentPath);
 
-        files.forEach((file) => {
-          const filePath = path.join(currentPath, file);
-          const stat = fs.statSync(filePath);
+            files.forEach((file) => {
+              const filePath = path.join(currentPath, file);
+              const stat = fs.statSync(filePath);
 
-          if (stat.isFile()) {
-            fileNames.push({
-              name: file
-                .replace("IconPerks_", "")
-                .replace(".png", "")
-                .replace("iconPerks_", ""),
-              path: filePath.replace(/\\/g, "/").replace("assets/Perks/", ""),
+              if (stat.isFile()) {
+                fileNames.push({
+                  name: file
+                    .replace("IconPerks_", "")
+                    .replace(".png", "")
+                    .replace("iconPerks_", ""),
+                  path: filePath
+                    .replace(/\\/g, "/")
+                    .replace("assets/Perks/", ""),
+                });
+              } else if (stat.isDirectory()) {
+                traverseDirectory(filePath);
+              }
             });
-          } else if (stat.isDirectory()) {
-            traverseDirectory(filePath);
-          }
-        });
-      };
+          };
 
-      traverseDirectory(directoryPath);
-      return fileNames;
-    };
+          traverseDirectory(directoryPath);
+          return fileNames;
+        };
 
-    const files = readFileNamesRecurse("./assets/Perks");
-    res.status(200).json(files);
+        const files = readFileNamesRecurse("./assets/Perks");
+        res.status(200).json(files);
+      } else res.status(401).json("Admin only");
+    } else res.status(401).json("Admin only");
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: err });
@@ -491,49 +497,53 @@ app.get("/perkFileDirs", async (req, res) => {
 
 app.get("/perkDefs", async (req, res) => {
   try {
-    const parseInputFile = (filePath) => {
-      const fileContent = fs.readFileSync(filePath, "utf-8");
-      const lines = fileContent
-        .split("\n")
-        .filter((line) => line.trim() !== "");
+    if (req.user) {
+      if (req.user._id == "64eda40519efcaf5ecaa2cb9") {
+        const parseInputFile = (filePath) => {
+          const fileContent = fs.readFileSync(filePath, "utf-8");
+          const lines = fileContent
+            .split("\n")
+            .filter((line) => line.trim() !== "");
 
-      const perks = [];
-      let currentPerk = null;
-      let writingDesc = false;
+          const perks = [];
+          let currentPerk = null;
+          let writingDesc = false;
 
-      for (const line of lines) {
-        if (line.includes("*>")) {
-          if (currentPerk != null) {
-            currentPerk = null;
-          }
-          currentPerk = {
-            name: line.replace("*>", "").replace("\r", ""),
-            desc: "",
-          };
-          writingDesc = true;
-        } else if (currentPerk) {
-          if (writingDesc) {
-            if (line.includes("*<")) {
-              writingDesc = false;
-              currentPerk.desc += line.replace("*<", "").replace("\r", "");
-            } else {
-              currentPerk.desc += line;
+          for (const line of lines) {
+            if (line.includes("*>")) {
+              if (currentPerk != null) {
+                currentPerk = null;
+              }
+              currentPerk = {
+                name: line.replace("*>", "").replace("\r", ""),
+                desc: "",
+              };
+              writingDesc = true;
+            } else if (currentPerk) {
+              if (writingDesc) {
+                if (line.includes("*<")) {
+                  writingDesc = false;
+                  currentPerk.desc += line.replace("*<", "").replace("\r", "");
+                } else {
+                  currentPerk.desc += line;
+                }
+              } else {
+                if (!currentPerk.owner) {
+                  currentPerk.owner = line.replace("\r", "");
+                } else if (!currentPerk.role) {
+                  currentPerk.role = line.replace("\r", "");
+                  perks.push(currentPerk);
+                }
+              }
             }
-          } else {
-            if (!currentPerk.owner) {
-              currentPerk.owner = line.replace("\r", "");
-            } else if (!currentPerk.role) {
-              currentPerk.role = line.replace("\r", "");
-              perks.push(currentPerk);
-            }
           }
-        }
-      }
 
-      return perks;
-    };
-    const perks = parseInputFile("./assets/PerkDefs.txt");
-    res.status(200).json(perks);
+          return perks;
+        };
+        const perks = parseInputFile("./assets/PerkDefs.txt");
+        res.status(200).json(perks);
+      } else res.status(401).json("Admin only");
+    } else res.status(401).json("Admin only");
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: err });
@@ -542,17 +552,21 @@ app.get("/perkDefs", async (req, res) => {
 
 app.post("/updatePerks", async (req, res) => {
   try {
-    req.body.forEach(async (perk) => {
-      console.log(perk);
-      const dbPerk = await Perk.find({ name: perk.name })[0];
-      if (dbPerk) {
-        dbPerk.set(perk);
-        await dbPerk.save();
-      } else {
-        const newPerk = await Perk.create(perk);
-      }
-    });
-    res.status(201).json({ message: "saved" });
+    if (req.user) {
+      if (req.user._id == "64eda40519efcaf5ecaa2cb9") {
+        req.body.forEach(async (perk) => {
+          console.log(perk);
+          const dbPerk = await Perk.find({ name: perk.name })[0];
+          if (dbPerk) {
+            dbPerk.set(perk);
+            await dbPerk.save();
+          } else {
+            const newPerk = await Perk.create(perk);
+          }
+        });
+        res.status(201).json({ message: "saved" });
+      } else res.status(401).json("Admin only");
+    } else res.status(401).json("Admin only");
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: err });
