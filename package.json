@@ -19,6 +19,7 @@
     "nodemon": "^2.0.22",
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",
-    "passport-steam": "^1.0.17"
+    "passport-steam": "^1.0.17",
+    "redis": "^4.6.8"
   }
 }
