@@ -12,6 +12,7 @@ import Post from "./Models/PostModel.js";
 import { createRequire } from "module";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as SteamStrategy } from "passport-steam";
+import MongoDBStore from 'connect-mongodb-session';
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(require.resolve("./"));
@@ -25,6 +26,19 @@ mongoose.connect(process.env.MONGODB_CONNECTION, {
   useUnifiedTopology: true,
 });
 
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+db.once('open', () => {
+  console.log('Connected to MongoDB');
+});
+const MongoDBStore = MongoDBSession.default;
+
+const store = new MongoDBStore({
+  mongooseConnection: db, 
+  collection: 'sessions', 
+});
+
+
 //init express
 const app = express();
 
@@ -32,13 +46,13 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: true,
-    saveUninitialized: true,
-  })
-);
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: store,
+}));
+
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -644,6 +658,6 @@ app.get("/perkimg/:perkimg*", (req, res) => {
 });
 
 //start the express server
-app.listen(5000, () => {
+app.listen($PORT, () => {
   console.log("Server started");
 });
