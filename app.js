@@ -13,6 +13,11 @@ import { createRequire } from "module";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as SteamStrategy } from "passport-steam";
 import MongoStore from 'connect-mongo'
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+
+const __dirname = path.dirname(__filename);
 
 const require = createRequire(import.meta.url);
 
