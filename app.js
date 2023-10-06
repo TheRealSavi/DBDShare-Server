@@ -15,7 +15,7 @@ import { Strategy as SteamStrategy } from "passport-steam";
 import MongoStore from 'connect-mongo'
 
 const require = createRequire(import.meta.url);
-const __dirname = path.dirname(require.resolve("./"));
+const __dirname = path.dirname(require.main.filename)
 
 //import env variables
 dotenv.config();
@@ -633,7 +633,7 @@ app.get("/perk/:id", async (req, res) => {
 
 app.get("/perkimg/:perkimg*", (req, res) => {
   const perkImg = req.params.perkimg + req.params[0];
-  const imagePath = path.join("assets", "perks", perkImg);
+  const imagePath = path.join("assets", "Perks", perkImg);
   console.log("getting img", perkImg);
 
   res.sendFile(imagePath, { root: __dirname }, (err) => {
