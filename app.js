@@ -31,13 +31,11 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 db.once('open', () => {
   console.log('Connected to MongoDB');
 });
-const MongoDBStore = MongoDBSession.default;
 
 const store = new MongoDBStore({
   mongooseConnection: db, 
   collection: 'sessions', 
 });
-
 
 //init express
 const app = express();
@@ -658,6 +656,6 @@ app.get("/perkimg/:perkimg*", (req, res) => {
 });
 
 //start the express server
-app.listen($PORT, () => {
+app.listen(process.env.PORT, () => {
   console.log("Server started");
 });
