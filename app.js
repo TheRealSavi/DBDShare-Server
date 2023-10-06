@@ -12,7 +12,7 @@ import Post from "./Models/PostModel.js";
 import { createRequire } from "module";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as SteamStrategy } from "passport-steam";
-import MongoStore from 'connect-mongo';
+import MongoStore from 'connect-mongo'
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(require.resolve("./"));
@@ -21,13 +21,13 @@ const __dirname = path.dirname(require.resolve("./"));
 dotenv.config();
 
 //connect to mongodb
-mongoose.connect(process.env.MONGODB_CONNECTION, {
+const clientP = mongoose.connect(process.env.MONGODB_CONNECTION, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
+}).then(m => m.connection.getClient());
 
-const store = new MongoStore({
-  mongooseConnection: mongoose.connection,
+const store = MongoStore.create({
+  clientPromise: clientP,
   collection: 'sessions', 
 });
 
