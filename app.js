@@ -12,7 +12,7 @@ import Post from "./Models/PostModel.js";
 import { createRequire } from "module";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as SteamStrategy } from "passport-steam";
-import MongoDBStore from 'connect-mongodb-session';
+import MongoStore from 'connect-mongo';
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(require.resolve("./"));
@@ -26,8 +26,8 @@ mongoose.connect(process.env.MONGODB_CONNECTION, {
   useUnifiedTopology: true,
 });
 
-const store = new MongoDBStore({
-  uri: process.env.MONGODB_CONNECTION, 
+const store = new MongoStore({
+  mongooseConnection: mongoose.connection,
   collection: 'sessions', 
 });
 
