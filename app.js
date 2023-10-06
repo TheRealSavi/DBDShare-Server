@@ -15,7 +15,6 @@ import { Strategy as SteamStrategy } from "passport-steam";
 import MongoStore from 'connect-mongo'
 
 const require = createRequire(import.meta.url);
-const __dirname = path.dirname(require.main.filename)
 
 //import env variables
 dotenv.config();
