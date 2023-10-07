@@ -9,20 +9,18 @@ import path from "path";
 import User from "./Models/UserModel.js";
 import Perk from "./Models/PerkModel.js";
 import Post from "./Models/PostModel.js";
-import { createRequire } from "module";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as SteamStrategy } from "passport-steam";
 import MongoStore from 'connect-mongo'
 import { fileURLToPath } from "url";
+import urlConfig from "./urlConfig.js"
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
-
 const __dirname = path.dirname(__filename);
 
-const require = createRequire(import.meta.url);
-
-//import env variables
-dotenv.config();
+console.log(urlConfig)
 
 //connect to mongodb
 const clientP = mongoose.connect(process.env.MONGODB_CONNECTION, {
@@ -40,7 +38,7 @@ const app = express();
 
 //setup express middlewares
 app.use(express.json());
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(cors({ origin: urlConfig.clientUrl, credentials: true }));
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -113,8 +111,8 @@ passport.use(
 passport.use(
   new SteamStrategy(
     {
-      returnURL: process.env.SERVER_URL + "auth/steam/callback",
-      realm: process.env.SERVER_URL,
+      returnURL: urlConfig.serverUrl + "auth/steam/callback",
+      realm: urlConfig.serverUrl,
       apiKey: process.env.STEAM_API_KEY,
     },
     async (identifier, profile, done) => {
@@ -160,7 +158,7 @@ app.get(
   passport.authenticate("google", { failureRedirect: "/" }),
   (req, res) => {
     //Succesful auth
-    res.redirect(process.env.CLIENT_URL + "/profile");
+    res.redirect(urlConfig.clientUrl + "/profile");
   }
 );
 
@@ -171,7 +169,7 @@ app.get(
   passport.authenticate("steam", { failureRedirect: "/" }),
   (req, res) => {
     //Successful auth
-    res.redirect(process.env.CLIENT_URL + "/profile");
+    res.redirect(urlConfig.clientUrl + "/profile");
   }
 );
 
@@ -654,6 +652,7 @@ app.get("/perkimg/:perkimg*", (req, res) => {
 });
 
 //start the express server
-app.listen(process.env.PORT, () => {
-  console.log("Server started");
+const serverPort = process.env.PORT || 5000
+app.listen(serverPort, () => {
+  console.log("API Server started on: " + urlConfig.serverUrl + ", Port:" + serverPort);
 });
