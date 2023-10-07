@@ -32,13 +32,13 @@ const UserSchema = mongoose.Schema({
   saveCount: {
     type: Number,
     required: [true, 0],
-    default: 0
+    default: 0,
   },
   postCount: {
     type: Number,
     required: [true, 0],
-    default: 0
-  }
+    default: 0,
+  },
 });
 
 const User = mongoose.model("User", UserSchema);
