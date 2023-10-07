@@ -11,26 +11,28 @@ import Perk from "./Models/PerkModel.js";
 import Post from "./Models/PostModel.js";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as SteamStrategy } from "passport-steam";
-import MongoStore from 'connect-mongo'
+import MongoStore from "connect-mongo";
 import { fileURLToPath } from "url";
-import urlConfig from "./urlConfig.js"
+import urlConfig from "./urlConfig.js";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log(urlConfig)
+console.log(urlConfig);
 
 //connect to mongodb
-const clientP = mongoose.connect(process.env.MONGODB_CONNECTION, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(m => m.connection.getClient());
+const clientP = mongoose
+  .connect(process.env.MONGODB_CONNECTION, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then((m) => m.connection.getClient());
 
 const store = MongoStore.create({
   clientPromise: clientP,
-  collection: 'sessions', 
+  collection: "sessions",
 });
 
 //init express
@@ -40,13 +42,14 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: urlConfig.clientUrl, credentials: true }));
 
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: store,
-}));
-
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: store,
+  })
+);
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -652,7 +655,9 @@ app.get("/perkimg/:perkimg*", (req, res) => {
 });
 
 //start the express server
-const serverPort = process.env.PORT || 5000
+const serverPort = process.env.PORT || 5000;
 app.listen(serverPort, () => {
-  console.log("API Server started on: " + urlConfig.serverUrl + ", Port:" + serverPort);
+  console.log(
+    "API Server started on: " + urlConfig.serverUrl + ", Port:" + serverPort
+  );
 });
