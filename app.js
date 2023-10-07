@@ -38,6 +38,9 @@ const store = MongoStore.create({
 //init express
 const app = express();
 
+//used for passport to enable https in prod
+app.enable("trust proxy");
+
 //setup express middlewares
 app.use(express.json());
 app.use(cors({ origin: urlConfig.clientUrl, credentials: true }));
