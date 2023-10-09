@@ -9,6 +9,7 @@ import path from "path";
 import User from "./Models/UserModel.js";
 import Perk from "./Models/PerkModel.js";
 import Post from "./Models/PostModel.js";
+import Fuse from "fuse.js";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as SteamStrategy } from "passport-steam";
 import MongoStore from "connect-mongo";
@@ -285,6 +286,201 @@ app.get("/posts", async (req, res) => {
     res.status(500).json({ message: err });
   }
 });
+
+app.get("/recentPosts", async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 30;
+    const posts = await Post.find({}).sort({ _id: -1 }).limit(limit);
+
+    if (req.user) {
+      addIsSavedProp(req.user.savedPosts, posts);
+    } else {
+      addIsSavedProp([], posts);
+    }
+    res.status(200).json(posts);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/hotPosts", async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 30;
+    const posts = await Post.find({}).sort({ saves: -1 }).limit(limit);
+    if (req.user) {
+      addIsSavedProp(req.user.savedPosts, posts);
+    } else {
+      addIsSavedProp([], posts);
+    }
+    res.status(200).json(posts);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/followingPosts", async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 30;
+    let posts;
+    if (req.user) {
+      posts = await Post.find({ authorID: { $in: req.user.following } })
+        .sort({ _id: -1 })
+        .limit(limit);
+      addIsSavedProp(req.user.savedPosts, posts);
+    } else {
+      posts = [];
+      addIsSavedProp([], posts);
+    }
+    res.status(200).json(posts);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/savedPosts", async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 30;
+    if (!req.user) {
+      return res.status(200).json([]);
+    }
+    const posts = await Post.find({ _id: { $in: req.user.savedPosts } })
+      .sort({ _id: -1 })
+      .limit(limit);
+    addIsSavedProp(req.user.savedPosts, posts);
+
+    res.status(200).json(posts);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/authorPosts", async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 30;
+    const authorID = req.query.authorID || "";
+    if (authorID == "") {
+      return res.status(404).json({ message: "No authorID provided" });
+    }
+    const posts = await Post.find({ authorID: authorID })
+      .sort({ _id: -1 })
+      .limit(limit);
+    if (req.user) {
+      addIsSavedProp(req.user.savedPosts, posts);
+    } else {
+      addIsSavedProp([], posts);
+    }
+    res.status(200).json(posts);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err });
+  }
+});
+
+app.get("/searchPosts", async (req, res) => {
+  try {
+    const query = req.query.query || "";
+    if (query == "") {
+      res.status(200).json([]);
+      return;
+    }
+    const perkIds = await findPerksFromString(query);
+    console.log(perkIds);
+    const postsMatchingPerks = await Post.find({ perkIDs: { $in: perkIds } });
+    const postsMatchingString = await findPostsFromString(query);
+
+    const getUniqueIdentifier = (post) => post._id.toString();
+    const mergedArray = [];
+    const addUniquePost = (post) => {
+      const id = getUniqueIdentifier(post);
+      if (
+        !mergedArray.some(
+          (existingPost) => getUniqueIdentifier(existingPost) === id
+        )
+      ) {
+        mergedArray.push(post);
+      }
+    };
+    postsMatchingPerks.forEach(addUniquePost);
+    postsMatchingString.forEach(addUniquePost);
+
+    if (req.user) {
+      addIsSavedProp(req.user.savedPosts, mergedArray);
+    } else {
+      addIsSavedProp([], mergedArray);
+    }
+
+    res.status(200).json(mergedArray);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+const findPostsFromString = async (string) => {
+  try {
+    const words = string.split(" ");
+
+    const allPosts = await Post.find({});
+
+    const fuseOptions = {
+      keys: ["name", "description"], // Specify the fields to search on
+      includeScore: false, // Include similarity score in the result
+      threshold: 0.17, // Adjust this threshold as needed
+    };
+
+    const fuse = new Fuse(allPosts, fuseOptions);
+
+    const matchingPosts = new Set();
+
+    // Search for posts matching each word and collect matching IDs
+    for (const word of words) {
+      const results = fuse.search(word);
+      const wordMatchings = results.map((result) => result.item);
+      wordMatchings.forEach((item) => matchingPosts.add(item));
+    }
+
+    // Convert the Set back to an array to ensure unique post IDs
+    const matchingPostsArr = Array.from(matchingPosts);
+
+    return matchingPostsArr;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const findPerksFromString = async (string) => {
+  try {
+    console.log(string);
+    const words = string.split(" ");
+
+    const allPerks = await Perk.find({});
+
+    const fuseOptions = {
+      keys: ["name"],
+      includeScore: false, // Include similarity score in the result
+      threshold: 0.17, // Adjust this threshold as needed
+    };
+
+    const uniqueMatchingPerkIds = new Set();
+
+    // Perform Fuse.js search for each word and collect matching IDs
+    for (const word of words) {
+      const fuse = new Fuse(allPerks, fuseOptions);
+      const results = fuse.search(word);
+      const wordMatchingPerkIds = results.map((result) =>
+        result.item._id.toString()
+      );
+      wordMatchingPerkIds.forEach((id) => uniqueMatchingPerkIds.add(id));
+    }
+    const matchingPerkIds = Array.from(uniqueMatchingPerkIds);
+    return matchingPerkIds;
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 app.get("/posts/:id", async (req, res) => {
   try {
