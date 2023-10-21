@@ -201,6 +201,21 @@ app.get("/getuser", (req, res) => {
   res.send(req.user);
 });
 
+app.post("/setUserSettings", (req, res) => {
+  try {
+    if (!req.user) {
+      res.status(404).json({ message: "Not logged in" });
+      return;
+    }
+    req.user.settings = req.body;
+    req.user.save();
+    res.status(201).json({ message: "settings updated" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error });
+  }
+});
+
 app.post("/savepost", async (req, res) => {
   try {
     const post = await Post.findById(req.body.postId);
@@ -836,9 +851,16 @@ app.get("/perk/:id", async (req, res) => {
 });
 
 app.get("/perkimg/:perkimg*", (req, res) => {
+  const skin = req.query.skin || "default";
   const perkImg = req.params.perkimg + req.params[0];
-  const imagePath = path.join("assets", "Perks", perkImg);
-  console.log("getting img", perkImg);
+  let imagePath;
+  if (skin == "default") {
+    imagePath = path.join("assets", "Perks", perkImg);
+  } else {
+    imagePath = path.join("assets", "Skins", skin, perkImg);
+  }
+
+  console.log("getting img", skin, "/", perkImg);
 
   res.sendFile(imagePath, { root: __dirname }, (err) => {
     if (err) {
