@@ -1,5 +1,11 @@
 import mongoose from "mongoose";
 
+const SettingsSchema = mongoose.Schema({
+  perkSkin: {
+    type: String,
+  },
+});
+
 const UserSchema = mongoose.Schema({
   googleId: {
     type: String,
@@ -38,6 +44,9 @@ const UserSchema = mongoose.Schema({
     type: Number,
     required: [true, 0],
     default: 0,
+  },
+  settings: {
+    type: SettingsSchema,
   },
 });
 
