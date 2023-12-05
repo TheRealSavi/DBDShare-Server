@@ -855,7 +855,7 @@ app.get("/perkimg/:perkimg*", (req, res) => {
   const perkImg = req.params.perkimg + req.params[0];
   let imagePath;
   if (skin == "default") {
-    imagePath = path.join("assets", "Perks", perkImg);
+    imagePath = path.join("assets", "default", perkImg);
   } else {
     imagePath = path.join("assets", "Skins", skin, perkImg);
   }
