@@ -86,23 +86,23 @@ To run this project, you will need to add the following environment variables to
 
 Client:
 
-`VITE_API_URL`
+`Api URL is defined in apiCongig.ts`
+`Ensure that it has http:// and a leading /`
+`http://localhost:5000/`
 
 Server:
 
 `GOOGLE_CLIENT_ID`
-
 `GOOGLE_SECRET`
-
 `STEAM_API_KEY`
-
 `SESSION_SECRET`
-
-`CLIENT_URL`
-
-`SERVER_URL`
-
+`CLIENT_URL=http://localhost:5173`
+`SERVER_URL=http://localhost:5000/`
+`DEV_CLIENT_URL=http://localhost:5173`
+`DEV_SERVER_URL=http://localhost:5000/`
+`Note that the client takes no / and the server does`
 `MONGODB_CONNECTION`
+
 
 ## ⚖ License
 
