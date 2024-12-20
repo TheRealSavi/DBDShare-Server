@@ -175,7 +175,7 @@ app.get(
   /^\/auth\/steam(\/callback)?$/,
   passport.authenticate("steam", { failureRedirect: "/" }),
   (req, res) => {
-    //Successful auth
+    // Successful auth
     res.redirect(urlConfig.clientUrl + "/profile");
   }
 );
@@ -358,18 +358,37 @@ app.get("/followingPosts", async (req, res) => {
 app.get("/savedPosts", async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 30;
+    
+    // Log the user object to ensure it's populated
+    console.log("User object:", req.user);
+    
     if (!req.user) {
       return res.status(200).json([]);
     }
-    const posts = await Post.find({ _id: { $in: req.user.savedPosts } })
+    
+    // Filter and convert string IDs to ObjectId
+    const savedPostIds = req.user.savedPosts
+      .filter(id => mongoose.Types.ObjectId.isValid(id))
+      .map(id => new mongoose.Types.ObjectId(id));
+    
+    // Log the savedPosts array
+    console.log("Saved posts:", savedPostIds);
+    
+    const posts = await Post.find({ _id: { $in: savedPostIds } })
       .sort({ _id: -1 })
       .limit(limit);
+    
+    // Log the retrieved posts
+    console.log("Retrieved posts:", posts);
+       
+    addIsSavedProp(req.user.savedPosts, posts);
+    
     addIsSavedProp(req.user.savedPosts, posts);
 
     res.status(200).json(posts);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: err });
+    console.log("Error in /savedPosts endpoint:", err);
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -842,6 +861,20 @@ app.get("/perks", async (req, res) => {
     res.status(500).json({ message: err });
   }
 });
+
+app.get("/following", async (req, res) => {
+  try {
+    if (req.user) {
+      const following = req.user.following;
+    res.status(200).json(following);
+    } else {
+      res.status(401).json({ message: "Not signed in" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.staus(500).json({message: err});
+  }
+})
 
 app.get("/perks/survivor", async (req, res) => {
   try {
